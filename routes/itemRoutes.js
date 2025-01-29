@@ -1,0 +1,17 @@
+const express = require('express');
+const {
+  getItems,
+  createItem,
+  updateItem,
+  deleteItem,
+} = require('../controllers/itemController');
+
+const router = express.Router();
+
+// Routes CRUD
+router.get('/', getItems);
+router.post('/', createItem);
+router.put('/:id', updateItem);
+router.delete('/:id', deleteItem);
+
+module.exports = router;
