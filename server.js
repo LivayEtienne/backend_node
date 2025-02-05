@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors'); // Importer CORS
 const bodyParser = require('body-parser');
 const connectDB = require('./config/database');
 const itemRoutes = require('./routes/itemRoutes');
@@ -7,6 +8,14 @@ const itemRoutes = require('./routes/itemRoutes');
 connectDB();
 
 const app = express();
+
+// Activer CORS avec support des credentials
+app.use(cors({
+  origin: 'http://localhost:4200', // Remplace par ton URL frontend
+  methods: 'GET,POST,PUT,DELETE',
+  allowedHeaders: 'Content-Type,Authorization',
+  credentials: true //Permet l'envoi des cookies/tokens
+}));
 
 // Middleware
 app.use(bodyParser.json());
