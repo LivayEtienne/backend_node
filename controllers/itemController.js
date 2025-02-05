@@ -1,5 +1,5 @@
-// controllers/itemController.js
 const Item = require('../models/itemsModel');
+
 
 // Créer un nouvel item
 exports.createItem = async(req, res) => {
@@ -11,7 +11,6 @@ exports.createItem = async(req, res) => {
         res.status(400).json({ message: error.message });
     }
 };
-
 
 // Vérification de l'existence d'un utilisateur par téléphone ou carte RFID
 exports.checkUserExistence = async(req, res) => {
@@ -36,7 +35,6 @@ exports.checkUserExistence = async(req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
-
 
 // Obtenir tous les items
 exports.getItems = async(req, res) => {
@@ -81,38 +79,10 @@ exports.deleteItem = async(req, res) => {
     }
 };
 
-
 // Fonction asynchrone pour supprimer plusieurs items
 exports.deleteMultipleItems = async(req, res) => {
-    console.log('Requête reçue pour supprimer des items :', req.body);
     try {
-        const { ids } = req.body; // Importer un fichier CSV
-        exports.importCSV = async(req, res) => {
-            try {
-                if (!req.file) {
-                    return res.status(400).json({ message: 'Aucun fichier CSV fourni' });
-                }
-
-                const items = [];
-
-                fs.createReadStream(req.file.path)
-                    .pipe(csv())
-                    .on('data', (data) => items.push(data))
-                    .on('end', async() => {
-                        try {
-                            await Item.insertMany(items);
-                            res.status(201).json({ message: `${items.length} items importés avec succès` });
-                        } catch (error) {
-                            res.status(500).json({
-                                message: 'Erreur lors de limportation des données ',
-                                error: error.message
-                            });
-                        }
-                    });
-            } catch (error) {
-                res.status(500).json({ message: error.message });
-            }
-        };
+        const { ids } = req.body;
 
         if (!ids || !Array.isArray(ids) || ids.length === 0) {
             return res.status(400).json({ message: 'Aucun ID fourni' });
@@ -125,51 +95,9 @@ exports.deleteMultipleItems = async(req, res) => {
     }
 };
 
-
-// Changer le statut d'un item
-exports.toggleItemStatus = async(req, res) => {
-    try {
-        const item = await Item.findById(req.params.id);
-        if (!item) return res.status(404).json({ message: 'Item non trouvé' });
-
-        item.status = !item.status; // Inverser le statut// Importer un fichier CSV
-        exports.importCSV = async(req, res) => {
-            try {
-                if (!req.file) {
-                    return res.status(400).json({ message: 'Aucun fichier CSV fourni' });
-                }
-
-                const items = [];
-
-                fs.createReadStream(req.file.path)
-                    .pipe(csv())
-                    .on('data', (data) => items.push(data))
-                    .on('end', async() => {
-                        try {
-                            await Item.insertMany(items);
-                            res.status(201).json({ message: `${items.length} items importés avec succès` });
-                        } catch (error) {
-                            res.status(500).json({
-                                message: 'Erreur lors de limportation des données ',
-                                error: error.message
-                            });
-                        }
-                    });
-            } catch (error) {
-                res.status(500).json({ message: error.message });
-            }
-        };
-        await item.save(); // Sauvegarder les modifications
-        res.status(200).json(item);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
 // Rechercher un utilisateur par numéro de téléphone
 exports.searchByPhoneNumber = async(req, res) => {
     try {
-        console.log('Requête reçue :', req.query);
         const { phoneNumber } = req.query;
         if (!phoneNumber) {
             return res.status(400).json({ message: 'Numéro de téléphone requis' });
@@ -177,35 +105,6 @@ exports.searchByPhoneNumber = async(req, res) => {
 
         const items = await Item.find({ telephone: phoneNumber });
         res.status(200).json(items);
-    } catch (error) {
-        console.error('Erreur:', error);
-        res.status(500).json({ message: error.message });
-    }
-};
-
-// Importer un fichier CSV
-exports.importCSV = async(req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ message: 'Aucun fichier CSV fourni' });
-        }
-
-        const items = [];
-
-        fs.createReadStream(req.file.path)
-            .pipe(csv())
-            .on('data', (data) => items.push(data))
-            .on('end', async() => {
-                try {
-                    await Item.insertMany(items);
-                    res.status(201).json({ message: `${items.length} items importés avec succès` });
-                } catch (error) {
-                    res.status(500).json({
-                        message: 'Erreur lors de limportation des données ',
-                        error: error.message
-                    });
-                }
-            });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

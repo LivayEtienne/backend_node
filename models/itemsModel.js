@@ -12,7 +12,7 @@ const itemSchema = new mongoose.Schema({
     codeSecret: { type: Number, required: true, unique: true, default: generateCodeSecret }, // Champ modifié
     carteRfid: { type: String, required: true, unique: true },
     telephone: { type: Number, required: true, unique: true },
-    adresse: { type: String, required: true }, // Champ ajouté
+    adresse: { type: String, required: true },
     role: { type: String, enum: ['Utilisateur', 'Super Admin'], required: true }, // Champ ajouté
     status: { type: Boolean, default: true }, // Par défaut, le statut est vrai
     createdAt: { type: Date, default: Date.now },
