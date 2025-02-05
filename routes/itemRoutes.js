@@ -26,6 +26,11 @@ router.put('/:id', itemController.updateItem);
 // Route pour supprimer un item
 router.delete('/:id', itemController.deleteItem);
 
+// Route pour vérifier l'existence d'un utilisateur
+router.post('/check-user', itemController.checkUserExistence);
+
+// **Nouvelle route pour importer des utilisateurs**
+router.post('/import', itemController.importCSV); // Ajoutez cette ligne
 // Route pour changer le statut d'un item
 // router.patch('/status/:id', itemController.toggleItemStatus);
 

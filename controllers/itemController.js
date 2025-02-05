@@ -12,6 +12,32 @@ exports.createItem = async(req, res) => {
     }
 };
 
+
+// Vérification de l'existence d'un utilisateur par téléphone ou carte RFID
+exports.checkUserExistence = async(req, res) => {
+    const { telephone, carteRfid } = req.body;
+
+    try {
+        const existingUserByPhone = await Item.findOne({ telephone });
+        const existingUserByRfid = await Item.findOne({ carteRfid });
+
+        if (existingUserByPhone) {
+            return res.json({ exists: true, type: 'telephone' });
+        }
+
+        if (existingUserByRfid) {
+            return res.json({ exists: true, type: 'carteRfid' });
+        }
+
+        // Si aucun utilisateur n'existe
+        res.json({ exists: false });
+    } catch (error) {
+        console.error('Erreur:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
 // Obtenir tous les items
 exports.getItems = async(req, res) => {
     try {
@@ -60,7 +86,33 @@ exports.deleteItem = async(req, res) => {
 exports.deleteMultipleItems = async(req, res) => {
     console.log('Requête reçue pour supprimer des items :', req.body);
     try {
-        const { ids } = req.body;
+        const { ids } = req.body; // Importer un fichier CSV
+        exports.importCSV = async(req, res) => {
+            try {
+                if (!req.file) {
+                    return res.status(400).json({ message: 'Aucun fichier CSV fourni' });
+                }
+
+                const items = [];
+
+                fs.createReadStream(req.file.path)
+                    .pipe(csv())
+                    .on('data', (data) => items.push(data))
+                    .on('end', async() => {
+                        try {
+                            await Item.insertMany(items);
+                            res.status(201).json({ message: `${items.length} items importés avec succès` });
+                        } catch (error) {
+                            res.status(500).json({
+                                message: 'Erreur lors de limportation des données ',
+                                error: error.message
+                            });
+                        }
+                    });
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        };
 
         if (!ids || !Array.isArray(ids) || ids.length === 0) {
             return res.status(400).json({ message: 'Aucun ID fourni' });
@@ -80,7 +132,33 @@ exports.toggleItemStatus = async(req, res) => {
         const item = await Item.findById(req.params.id);
         if (!item) return res.status(404).json({ message: 'Item non trouvé' });
 
-        item.status = !item.status; // Inverser le statut
+        item.status = !item.status; // Inverser le statut// Importer un fichier CSV
+        exports.importCSV = async(req, res) => {
+            try {
+                if (!req.file) {
+                    return res.status(400).json({ message: 'Aucun fichier CSV fourni' });
+                }
+
+                const items = [];
+
+                fs.createReadStream(req.file.path)
+                    .pipe(csv())
+                    .on('data', (data) => items.push(data))
+                    .on('end', async() => {
+                        try {
+                            await Item.insertMany(items);
+                            res.status(201).json({ message: `${items.length} items importés avec succès` });
+                        } catch (error) {
+                            res.status(500).json({
+                                message: 'Erreur lors de limportation des données ',
+                                error: error.message
+                            });
+                        }
+                    });
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        };
         await item.save(); // Sauvegarder les modifications
         res.status(200).json(item);
     } catch (error) {
@@ -101,6 +179,34 @@ exports.searchByPhoneNumber = async(req, res) => {
         res.status(200).json(items);
     } catch (error) {
         console.error('Erreur:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Importer un fichier CSV
+exports.importCSV = async(req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'Aucun fichier CSV fourni' });
+        }
+
+        const items = [];
+
+        fs.createReadStream(req.file.path)
+            .pipe(csv())
+            .on('data', (data) => items.push(data))
+            .on('end', async() => {
+                try {
+                    await Item.insertMany(items);
+                    res.status(201).json({ message: `${items.length} items importés avec succès` });
+                } catch (error) {
+                    res.status(500).json({
+                        message: 'Erreur lors de limportation des données ',
+                        error: error.message
+                    });
+                }
+            });
+    } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
