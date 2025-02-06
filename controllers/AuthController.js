@@ -49,7 +49,7 @@ const loginItem = async (req, res) => {
             maxAge: 8 * 60 * 60 * 1000,
         });
 
-        return res.status(200).json({ msg: "Connexion réussie", role: item.role || "default" });
+        return res.status(200).json({ msg: "Connexion réussie",nom: item.nom, prenom: item.prenom, role: item.role || "default" });
     } catch (error) {
         console.error("Erreur pendant la connexion :", error);
         return res.status(500).json({ msg: "Erreur serveur", error: error.message });

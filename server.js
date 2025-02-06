@@ -86,14 +86,34 @@ io.on('connection', (socket) => {
   });
 });
 
-// Gestion des données reçues du lecteur RFID
+
+
+
+function resetCardReader() {
+  console.log('Réinitialisation du lecteur de carte...');
+  
+  serialPort.write('RESET\n', (err) => {
+    if (err) {
+      console.error('Erreur lors de la réinitialisation:', err.message);
+    } else {
+      console.log('Lecteur prêt pour un nouveau scan.');
+      io.emit('reader-ready', { status: true });
+    }
+  });
+}
+
 serialPort.on('data', (data) => {
   const cardId = data.toString().trim();
-  console.log('Card ID reçu:', cardId);
-  
-  // Émettre l'ID de la carte aux clients connectés
-  io.emit('card-scanned', { cardId });
+
+  if (cardId && !cardId.includes("System pret") && !cardId.includes("RFID...")) {
+    console.log('Card ID reçu:', cardId);
+    io.emit('card-scanned', { cardId });
+
+    // Réinitialisation du lecteur
+    setTimeout(resetCardReader, 2000);
+  }
 });
+
 
 // Gestion des erreurs du port série
 serialPort.on('error', (err) => {
