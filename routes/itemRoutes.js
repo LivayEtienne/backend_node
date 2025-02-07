@@ -27,5 +27,8 @@ router.delete('/:id', itemController.deleteItem);
 // Route pour vérifier l'existence d'un utilisateur
 router.post('/check-user', itemController.checkUserExistence);
 
+// Route pour importer des utilisateurs à partir d'un CSV
+router.post('/import-csv', itemController.upload.single('csv_file'), itemController.importCSV);
+
 // Exporter les routes
 module.exports = router;
