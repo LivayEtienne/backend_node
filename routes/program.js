@@ -7,6 +7,6 @@ router.get('/', programController.getPrograms); // Récupérer toutes les progra
 router.put('/:id', programController.updateProgram); // Modifier une programmation
 router.delete('/:id', programController.deleteProgram); // Supprimer une programmation
 router.get('/:id', programController.getProgramById); // Récupérer une programmation par son ID
-
+router.get('/plant/:plantId', programController.getProgramsByPlantId); // Récupérer les programmes pour une plante spécifique
 
 module.exports = router;
