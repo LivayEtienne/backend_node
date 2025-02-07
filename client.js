@@ -18,7 +18,7 @@ conn.on('ready', () => {
     console.log('Connexion SSH établie');
 
     // Chemin vers le script Python
-    const pythonScriptPath = '/home/etienne/Desktop/humiditesol.py'; 
+    const pythonScriptPath = '/home/etienne/Desktop/dht_test11/test.py'; 
 
     // Exécution du script Python via SSH
     conn.exec(`python3 ${pythonScriptPath}`, (err, stream) => {
@@ -27,11 +27,22 @@ conn.on('ready', () => {
             return;
         }
 
-        stream.on('close', (code, signal) => {
+        let pythonOutput = '';
+        
+        stream.on('data', (data) => {
+            pythonOutput += data.toString();
+        }).on('close', (code, signal) => {
             console.log(`Le script Python s'est terminé avec le code : ${code}`);
+
+            // Si le script s'est bien exécuté, renvoyer la sortie comme réponse de l'API
+            const output = parsePythonData(pythonOutput);
+            
+            // Rediriger vers l'API
+            app.get('/api/data', (req, res) => {
+                res.json(output);
+            });
+
             conn.end(); // Fermer la connexion SSH après l'exécution
-        }).on('data', (data) => {
-            console.log('Sortie du script Python:', data.toString());
         }).on('stderr', (data) => {
             console.error('Erreur du script Python:', data.toString());
         });
@@ -45,17 +56,24 @@ conn.on('ready', () => {
     password: 'simplon'    // Mot de passe
 });
 
-// Création du serveur HTTP
-app.get('/api/data', (req, res) => {
-    // Exemple de données dynamiques, tu peux remplacer ceci par les données de ton script Python
-    const data = {
-        humidity: Math.floor(Math.random() * 100),
-        lightLevel: Math.floor(Math.random() * 100),
-        temperature: Math.floor(Math.random() * 30)
-    };
+// Fonction pour parser la sortie du script Python
+// Fonction pour parser la sortie du script Python
+function parsePythonData(pythonData) {
+    // Exemple d'extraction des données, à ajuster en fonction de la sortie exacte de ton script
+    const regex = /Temp=([\d.]+)°C, Temp=([\d.]+)°F, Humidity=([\d.]+)%/;
+    const match = pythonData.match(regex);
 
-    res.json({ data });
-});
+    if (match) {
+        return {
+            temperature_c: parseFloat(match[1]),
+            temperature_f: parseFloat(match[2]),
+            humidity: parseFloat(match[3])
+        };
+    } else {
+        return { error: 'Données non disponibles' };
+    }
+}
+
 
 // Démarrer le serveur HTTP sur le port 3000
 app.listen(port, () => {
