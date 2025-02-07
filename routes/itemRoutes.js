@@ -32,6 +32,7 @@ router.delete('/:id', itemController.deleteItem);
 // Route pour changer le statut d'un item
 // router.patch('/status/:id', itemController.toggleItemStatus);
 
+router.post('/import', itemController.importCSV); // Ajoutez cette ligne
 
 
   
@@ -40,12 +41,15 @@ router.delete('/:id', itemController.deleteItem);
  */
 router.post('/logout', (req, res) => {
   try {
-    // Effacer le cookie authToken
+    console.log("Déconnexion en cours...");
+    
     res.clearCookie('authToken', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // HTTPS en production
-      sameSite: 'strict',
+      secure: false,  // 🚨 Mettre false en développement
+      sameSite: 'lax', // 🌟 Changer de 'strict' à 'lax' pour éviter des problèmes de suppression
     });
+
+    console.log("Cookie supprimé.");
     return res.status(200).json({ msg: 'Déconnexion réussie' });
   } catch (error) {
     console.error("Erreur lors de la déconnexion :", error);

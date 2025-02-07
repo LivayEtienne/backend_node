@@ -104,3 +104,45 @@ exports.searchByPhoneNumber = async(req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+exports.importCSV = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'Aucun fichier CSV fourni' });
+        }
+
+        const items = [];
+
+        fs.createReadStream(req.file.path)
+            .pipe(csv()) // Assurez-vous que csv-parser est bien installé et utilisé ici
+            .on('data', (data) => items.push(data))
+            .on('end', async () => {
+                try {
+                    await Item.insertMany(items);
+                    res.status(201).json({ message: `${items.length} items importés avec succès` });
+                } catch (error) {
+                    res.status(500).json({
+                        message: 'Erreur lors de l\'importation des données',
+                        error: error.message
+                    });
+                }
+            });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Changer le statut d'un item
+exports.toggleItemStatus = async (req, res) => {
+    try {
+        const item = await Item.findById(req.params.id);
+        if (!item) return res.status(404).json({ message: 'Item non trouvé' });
+
+        item.status = !item.status; // Inverser le statut
+
+        await item.save(); // Sauvegarder les modifications
+        res.status(200).json(item); // Retourner l'item avec le nouveau statut
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
