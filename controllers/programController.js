@@ -1,41 +1,46 @@
-const Program  = require('../models/program');
+const Program = require('../models/program');
 const Plant = require('../models/plants');
 
-// Ajouter une nouvelle programmation
+// Ajouter une nouvelle programmation et l'associer à une plante
 exports.addProgram = async (req, res) => {
-  try {
-      const { plantId, date, periode, nombreFois, arrosages } = req.body;
+    try {
+        const { plantId, date, periode, nombreFois, arrosages } = req.body;
 
-      if (!plantId) {
-          return res.status(400).json({ error: "L'ID de la plante est requis" });
-      }
+        // Vérification que l'ID de la plante est bien inclus dans les données
+        if (!plantId) {
+            return res.status(400).json({ error: "L'ID de la plante est requis" });
+        }
 
-      if (!arrosages || arrosages.length !== nombreFois) {
-          return res.status(400).json({
-              error: `'arrosages' doit être défini et sa longueur doit être égale à 'nombreFois'`
-          });
-      }
+        // Vérification de la validité des données 'arrosages'
+        if (!arrosages || arrosages.length !== nombreFois) {
+            return res.status(400).json({
+                error: `'arrosages' doit être défini et sa longueur doit être égale à 'nombreFois'`
+            });
+        }
 
-      const plant = await Plant.findById(plantId);
-      if (!plant) {
-          return res.status(404).json({ error: 'Plante non trouvée' });
-      }
+        // Récupérer la plante à partir de l'ID
+        const plant = await Plant.findById(plantId);
+        if (!plant) {
+            return res.status(404).json({ error: 'Plante non trouvée' });
+        }
 
-      const newProgram = new Program({
-          plantId,
-          date,
-          periode,
-          nombreFois,
-          arrosages
-      });
+        // Créer un programme avec les données
+        const newProgram = new Program({
+            plantId,
+            date,
+            periode,
+            nombreFois,
+            arrosages
+        });
 
-      await newProgram.save();
+        // Sauvegarder le programme
+        await newProgram.save();
 
-      res.status(201).json({ message: 'Programmation enregistrée avec succès !', program: newProgram });
-  } catch (error) {
-      console.error('Erreur lors de l\'enregistrement:', error);
-      res.status(500).json({ error: 'Erreur lors de l\'enregistrement', details: error.message });
-  }
+        res.status(201).json({ message: 'Programmation enregistrée avec succès !', program: newProgram });
+    } catch (error) {
+        console.error('Erreur lors de l\'enregistrement:', error);
+        res.status(500).json({ error: 'Erreur lors de l\'enregistrement', details: error.message });
+    }
 };
 
 // Récupérer toutes les programmations
