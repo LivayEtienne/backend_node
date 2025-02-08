@@ -3,7 +3,11 @@ const cors = require('cors'); // Importer CORS
 const bodyParser = require('body-parser');
 const connectDB = require('./config/database');
 const itemRoutes = require('./routes/itemRoutes');
+const mongoose = require('mongoose');
+const multer = require('multer');
+const path = require('path');
 
+const fs = require('fs');
 const { SerialPort } = require('serialport');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -15,6 +19,15 @@ connectDB();
 const app = express();
 const PORT = 5000;
 
+// Créez le dossier "uploads" s'il n'existe pas
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+
+// Serveur de fichiers statiques pour les images
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Activer CORS avec support des credentials
 app.use(cors({
   origin: 'http://localhost:4200',
@@ -23,11 +36,26 @@ app.use(cors({
   credentials: true
 }));
 
+// Configuration de multer pour gérer les uploads de fichiers
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/'); // Stockage des fichiers dans le dossier "uploads"
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname)); // Nom du fichier basé sur la date actuelle
+  }
+});
+
+const upload = multer({ storage: storage });
+
+
 // Middleware
 app.use(bodyParser.json());
 
 // Routes
 app.use('/api/items', itemRoutes);
+app.use('/api/plants', require('./models/plants'));
+app.use('/api/programs', require('./routes/program')); // ✅ Ajout des routes pour la programmation
 
 // Configuration du serveur HTTP et Socket.IO
 const server = http.createServer(app);

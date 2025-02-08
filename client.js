@@ -1,81 +1,82 @@
-const ssh2 = require('ssh2');
 const express = require('express');
-const cors = require('cors');  // Importer le middleware CORS
+const cors = require('cors');  // Importation du middleware CORS
+const WebSocket = require('ws');  // Importation de WebSocket
 const app = express();
 const port = 3000;
 
-// Utiliser le middleware CORS pour autoriser les requêtes provenant de localhost:4200
-app.use(cors({
-    origin: 'http://localhost:4200',  // Permet les requêtes depuis Angular
-    methods: 'GET,POST',             // Autorise certaines méthodes HTTP
-    allowedHeaders: 'Content-Type,Authorization'  // Autorise certains headers
-}));
+// Utilisation du middleware CORS pour permettre les requêtes depuis d'autres origines
+app.use(cors());
 
-// Crée une nouvelle connexion SSH
-const conn = new ssh2.Client();
+// Permet à notre serveur de traiter des données en JSON
+app.use(express.json());
 
-conn.on('ready', () => {
-    console.log('Connexion SSH établie');
+// Variable pour stocker les données reçues
+let donnees = {};
 
-    // Chemin vers le script Python
-    const pythonScriptPath = '/home/etienne/Desktop/dht_test11/test.py'; 
+// Création du serveur WebSocket
+const wss = new WebSocket.Server({ noServer: true }); // Le serveur WebSocket va être associé à notre serveur HTTP
 
-    // Exécution du script Python via SSH
-    conn.exec(`python3 ${pythonScriptPath}`, (err, stream) => {
-        if (err) {
-            console.error('Erreur lors de l\'exécution du script Python:', err);
-            return;
-        }
+// Écoute les connexions WebSocket
+wss.on('connection', (ws) => {
+  console.log('Un client est connecté via WebSocket');
 
-        let pythonOutput = '';
-        
-        stream.on('data', (data) => {
-            pythonOutput += data.toString();
-        }).on('close', (code, signal) => {
-            console.log(`Le script Python s'est terminé avec le code : ${code}`);
+  // Envoie les dernières données au client immédiatement après la connexion
+  if (donnees && donnees.temperature && donnees.humidity) {
+    ws.send(JSON.stringify(donnees));
+  }
 
-            // Si le script s'est bien exécuté, renvoyer la sortie comme réponse de l'API
-            const output = parsePythonData(pythonOutput);
-            
-            // Rediriger vers l'API
-            app.get('/api/data', (req, res) => {
-                res.json(output);
-            });
-
-            conn.end(); // Fermer la connexion SSH après l'exécution
-        }).on('stderr', (data) => {
-            console.error('Erreur du script Python:', data.toString());
-        });
-    });
-}).on('error', (err) => {
-    console.error('Erreur SSH:', err);
-}).connect({
-    host: '192.168.1.94',  // IP du Raspberry Pi
-    port: 22,              // Port SSH
-    username: 'etienne',   // Nom d'utilisateur
-    password: 'simplon'    // Mot de passe
+  // Envoie les nouvelles données au client chaque fois que les données sont mises à jour
+  ws.on('message', (message) => {
+    console.log('Message reçu du client:', message);
+  });
 });
 
-// Fonction pour parser la sortie du script Python
-// Fonction pour parser la sortie du script Python
-function parsePythonData(pythonData) {
-    // Exemple d'extraction des données, à ajuster en fonction de la sortie exacte de ton script
-    const regex = /Temp=([\d.]+)°C, Temp=([\d.]+)°F, Humidity=([\d.]+)%/;
-    const match = pythonData.match(regex);
+// Route POST pour recevoir les données du Raspberry Pi
+app.post('/donnees', (req, res) => {
+  // Récupère les données envoyées par le Raspberry Pi
+  const data = req.body;
 
-    if (match) {
-        return {
-            temperature_c: parseFloat(match[1]),
-            temperature_f: parseFloat(match[2]),
-            humidity: parseFloat(match[3])
-        };
-    } else {
-        return { error: 'Données non disponibles' };
+  // Affiche les données reçues dans la console
+  console.log('Données reçues:', data);
+
+  // Vérifie si des données ont été reçues
+  if (!data) {
+    return res.status(400).json({ message: 'Aucune donnée reçue' });
+  }
+
+  // Stocke les données reçues dans la variable 'donnees'
+  donnees = data;
+
+  // Envoie les données à tous les clients connectés via WebSocket
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(donnees));
     }
-}
+  });
 
+  // Renvoie une réponse avec les données
+  res.status(200).json({
+    message: 'Données reçues avec succès',
+    data: data,
+  });
+});
 
-// Démarrer le serveur HTTP sur le port 3000
-app.listen(port, () => {
-    console.log(`Serveur Node.js écoute sur http://localhost:${port}`);
+// Route GET pour récupérer les données envoyées
+app.get('/donnees', (req, res) => {
+  if (!donnees) {
+    return res.status(404).json({ message: 'Aucune donnée disponible' });
+  }
+  res.json(donnees);
+});
+
+// Sur le serveur HTTP : le serveur WebSocket doit écouter les connexions
+app.server = app.listen(port, '0.0.0.0', () => {
+  console.log(`Serveur Node.js en écoute sur http://0.0.0.0:${port}`);
+});
+
+// Relie le serveur WebSocket au serveur HTTP existant
+app.server.on('upgrade', (request, socket, head) => {
+  wss.handleUpgrade(request, socket, head, (ws) => {
+    wss.emit('connection', ws, request);
+  });
 });
