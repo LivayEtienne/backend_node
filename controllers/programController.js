@@ -1,5 +1,5 @@
-const Program = require('../models/program');
-const Plant = require('../models/plants');
+const Program = require('../models/Program');
+const Plant = require('../models/Plant');
 
 // Ajouter une nouvelle programmation et l'associer à une plante
 exports.addProgram = async (req, res) => {

@@ -7,7 +7,7 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 // Créez le dossier "uploads" s'il n'existe pas
 const uploadDir = path.join(__dirname, 'uploads');
@@ -27,7 +27,7 @@ app.use(cors({
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Connexion à la base de données MongoDB
-mongoose.connect('mongodb://localhost:27017/gestion_arrosage', {
+mongoose.connect('mongodb://localhost:27017/gestion_arrosage1', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 }).then(() => {

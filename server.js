@@ -6,7 +6,7 @@ const itemRoutes = require('./routes/itemRoutes');
 const mongoose = require('mongoose');
 const multer = require('multer');
 const path = require('path');
-
+const program = require('./models/Program');
 const fs = require('fs');
 const { SerialPort } = require('serialport');
 const http = require('http');
@@ -54,7 +54,7 @@ app.use(bodyParser.json());
 
 // Routes
 app.use('/api/items', itemRoutes);
-app.use('/api/plants', require('./models/plants'));
+app.use('/api/plants', require('./models/Plant'));
 app.use('/api/programs', require('./routes/program')); // ✅ Ajout des routes pour la programmation
 
 // Configuration du serveur HTTP et Socket.IO
